@@ -12,12 +12,19 @@ with open("page_updates.txt") as file:
         updates.append(line.split()[0].split(","))
 
 # Convert rules to a dict with a list associated with each 'left' number
+# Also create a reverse rule dict associated with each 'right' number
 rule_dict = {}
+reverse_rule_dict = {}
 for rule in rules:
     if rule[0] in rule_dict:
         rule_dict[rule[0]].append(rule[1]) 
     else:
         rule_dict[rule[0]] = [rule[1]]
+    
+    if rule[1] in reverse_rule_dict:
+        reverse_rule_dict[rule[1]].append(rule[0]) 
+    else:
+        reverse_rule_dict[rule[1]] = [rule[0]]
 
 def rule_check(rule, update, ind_range):
     # Return False if a rule is broken
@@ -26,6 +33,44 @@ def rule_check(rule, update, ind_range):
             if update[ind] in rule_dict[rule]:
                 return False
     return True
+
+def fix_update(update):
+    # For each number in the update, check if there is a following
+    # number that it is supposed to be 
+    bad_list = True
+
+    while bad_list:
+        break_early = False  
+        print(update)
+        for i, value in enumerate(update):
+            if i == 0:
+                continue
+            print(value)
+            if value in reverse_rule_dict:
+                # Any numbers associated with the value in the reverse dict
+                # need to be before this value. Loop through the remaining numbers
+                # and if any have precedence move them in front, then rerun
+                for j, forward_value in enumerate(update[i+1:-1]):
+                    if forward_value in reverse_rule_dict[value]:
+                        # Move forward_value to before current value
+                        print(*range(0,i))
+                        print(j+i)
+                        print(*range(i,j+i))
+                        print(*range(j+i+1,len(update)))
+                        new_order = [
+                            *range(0,i),
+                            j+i+1,
+                            *range(i,j+i+1),
+                            *range(j+i+2,len(update))
+                        ]
+                        print(new_order)
+                        update = [update[k] for k in new_order]
+                        print(update)
+                        break_early = True
+                        break
+                if break_early:
+                    break
+
 
 #Check each update for validity
 okay_count = 0
@@ -46,11 +91,9 @@ for update in updates:
     if not bad_list:
         # Now get middle number of update
         mid_num = update[math.floor(len(update)/2)]
-        print(update)
-        print(mid_num)
         okay_count += int(mid_num)
     else:
-        # Fix the bad list
+        # Fix the bad list then check middle number
         pass
     
-print(okay_count)
+print(f"Okay Count:{okay_count}")
