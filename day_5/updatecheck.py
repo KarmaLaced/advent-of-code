@@ -38,38 +38,38 @@ def fix_update(update):
     # For each number in the update, check if there is a following
     # number that it is supposed to be 
     bad_list = True
+    break_early = False
 
     while bad_list:
-        break_early = False  
+        break_early = False
+        update_loop = update.copy()
         print(update)
         for i, value in enumerate(update):
-            if i == 0:
-                continue
             print(value)
+            # Look ahead and find any violations
             if value in reverse_rule_dict:
-                # Any numbers associated with the value in the reverse dict
-                # need to be before this value. Loop through the remaining numbers
-                # and if any have precedence move them in front, then rerun
-                for j, forward_value in enumerate(update[i+1:-1]):
+                remaining = [update[x] for x in range(i+1,len(update))]
+                violating_inds = []
+                for j, forward_value in enumerate(remaining):
                     if forward_value in reverse_rule_dict[value]:
-                        # Move forward_value to before current value
-                        print(*range(0,i))
-                        print(j+i)
-                        print(*range(i,j+i))
-                        print(*range(j+i+1,len(update)))
-                        new_order = [
-                            *range(0,i),
-                            j+i+1,
-                            *range(i,j+i+1),
-                            *range(j+i+2,len(update))
-                        ]
-                        print(new_order)
-                        update = [update[k] for k in new_order]
-                        print(update)
-                        break_early = True
-                        break
-                if break_early:
+                        violating_inds.append(i+1+j)
+                # If a rule is violated, swap the current index and the latest
+                # violating index
+                if violating_inds:
+                    update_loop[violating_inds[-1]] = update[i]
+                    update_loop[i] = update[violating_inds[-1]]
+                    update = update_loop
+                    break_early = True
                     break
+        if not break_early:
+            bad_list = False
+    
+    # Return middle value
+    mid_num = update[math.floor(len(update)/2)]
+    return mid_num
+
+
+
 
 
 #Check each update for validity
@@ -78,10 +78,6 @@ fixed_count = 0
 for update in updates:
     bad_list = False
     for i, value in enumerate(update):
-        # First value is always good
-        if i == 0:
-            continue
-
         # Check that the current number doesn't violate any rules of the
         # numbers before it
         # if it does, break the loop
@@ -94,6 +90,7 @@ for update in updates:
         okay_count += int(mid_num)
     else:
         # Fix the bad list then check middle number
-        pass
+        fixed_count += int(fix_update(update))
     
 print(f"Okay Count:{okay_count}")
+print(f"Fixed Count:{fixed_count}")
